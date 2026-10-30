@@ -1,0 +1,20 @@
+# Render-Blueprint für den Lodge-Server.
+# In Render: New → Blueprint → dieses Repository wählen. DATABASE_URL (von Neon) wird beim Anlegen abgefragt.
+services:
+  - type: web
+    name: lodge-server
+    runtime: node
+    plan: free
+    rootDir: server
+    buildCommand: npm ci
+    startCommand: npm start
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: DATABASE_URL
+        sync: false
+      # Wird einmalig zufällig erzeugt; bleibt bei Neustarts gleich, damit niemand ausgeloggt wird.
+      - key: JWT_SECRET
+        generateValue: true

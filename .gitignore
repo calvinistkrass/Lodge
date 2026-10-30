@@ -3,3 +3,5 @@ server/data/
 app/dist/
 app/.expo/
 desktop/release/
+.env
+.env.local

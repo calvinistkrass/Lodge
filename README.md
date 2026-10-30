@@ -4,54 +4,99 @@ Deine eigene, kostenlose Gaming- und Chill-Software: Server, Text- und Sprachkan
 
 ```
 Lodge/
-├─ server/    Backend (Node.js, Express, Socket.IO, SQLite) – speichert alles in server/data/
-├─ app/       App für Handy (Expo) und Web
-└─ desktop/   PC-Version (Electron) → .exe
+├─ server/       Backend (Node.js, Express, Socket.IO) – Postgres in der Cloud, SQLite lokal
+├─ app/          Web-App (Expo) – läuft im Browser und in der PC-Version
+├─ desktop/      PC-Version (Electron) → .exe
+└─ render.yaml   Bauplan für den Server bei Render
 ```
 
-## 1. Server starten
+---
 
-Der Server muss laufen, damit sich alle verbinden können. Doppelklick auf **`Server starten.bat`** oder:
+## Online stellen (kostenlos)
 
-```bash
-npm --prefix server start
-```
+| Teil | Wo | Kosten |
+|---|---|---|
+| Datenbank | [Neon](https://neon.tech) (Postgres) | gratis |
+| Server | [Render](https://render.com) | gratis (schläft nach ~15 Min. ohne Nutzung, Aufwachen dauert ~1 Min.) |
+| Web-App | [Vercel](https://vercel.com) | gratis |
 
-Beim Start zeigt er seine Adressen an, z. B. `http://192.168.2.50:3000`. Diese Adresse tragen alle Geräte im selben WLAN beim Login unter „Server-Adresse“ ein.
+### 1. Datenbank bei Neon
 
-Freunde außerhalb deines WLANs brauchen eine öffentliche Adresse – z. B. kostenlos per Portfreigabe (Port 3000) im Router, mit [Tailscale](https://tailscale.com) oder [playit.gg](https://playit.gg).
+1. Bei Neon anmelden → **New Project** → Region in Europa (z. B. Frankfurt) wählen.
+2. Unter **Connection string** die Adresse kopieren, sie sieht so aus:
+   `postgresql://benutzer:passwort@ep-xyz.eu-central-1.aws.neon.tech/neondb?sslmode=require`
 
-Der Server liefert außerdem die Web-Version aus: einfach `http://<adresse>:3000` im Browser öffnen.
+Die Tabellen legt der Server beim ersten Start selbst an.
 
-## 2. PC-Version (.exe)
+### 2. Server bei Render
+
+1. Bei Render mit GitHub anmelden → **New** → **Blueprint** → Repository `Lodge` wählen.
+2. Render liest `render.yaml` und fragt nach **`DATABASE_URL`** → den Neon-Connection-String einfügen.
+3. **Apply** klicken. Nach dem Bauen bekommst du eine Adresse wie `https://lodge-server.onrender.com`.
+4. Test: `https://lodge-server.onrender.com/api/health` muss `{"ok":true,...}` anzeigen.
+
+`JWT_SECRET` erzeugt Render automatisch. Bei jedem Push auf `main` wird der Server neu gebaut.
+
+### 3. Web-App bei Vercel
+
+1. Bei Vercel mit GitHub anmelden → **Add New** → **Project** → `Lodge` importieren.
+2. **Root Directory** auf **`app`** stellen (wichtig!). Den Rest erkennt Vercel über `app/vercel.json`.
+3. Unter **Environment Variables** eintragen:
+   - `EXPO_PUBLIC_SERVER_URL` = deine Render-Adresse, z. B. `https://lodge-server.onrender.com`
+   - `EXPO_PUBLIC_WEB_URL` = deine Vercel-Adresse, z. B. `https://lodge.vercel.app` (später deine Domain)
+4. **Deploy**.
+
+### 4. Eigene Domain
+
+**Web-App:** Vercel → Projekt → **Settings → Domains** → Domain eintragen (z. B. `lodge.deinedomain.de`) und die angezeigten DNS-Einträge bei deinem Domain-Anbieter setzen. Danach `EXPO_PUBLIC_WEB_URL` auf die neue Domain ändern und in Vercel **Redeploy** klicken.
+
+**Server (optional):** Render → Service → **Settings → Custom Domains** → z. B. `api.deinedomain.de`. Danach `EXPO_PUBLIC_SERVER_URL` in Vercel anpassen und neu deployen.
+
+HTTPS-Zertifikate stellen Vercel und Render automatisch aus. HTTPS ist auch nötig, damit Mikrofon und Kamera im Browser funktionieren.
+
+---
+
+## PC-Version (.exe)
 
 Die fertigen Dateien liegen nach dem Bauen in `desktop/release/`:
 
 - `Lodge Setup 1.0.0.exe` – Installer mit Desktop-Verknüpfung
 - `Lodge-Portable-1.0.0.exe` – läuft ohne Installation
 
-Neu bauen (z. B. nach Änderungen an der App):
+Damit die .exe direkt mit deinem Online-Server verbindet, lege `app/.env` an (Vorlage: `app/.env.example`):
+
+```
+EXPO_PUBLIC_SERVER_URL=https://lodge-server.onrender.com
+EXPO_PUBLIC_WEB_URL=https://lodge.deinedomain.de
+```
+
+und baue neu:
 
 ```bash
 npm --prefix desktop run dist
 ```
 
-## 3. Handy (Expo Go)
+Ohne `.env` verbindet die .exe mit `http://localhost:3000`. Die Adresse lässt sich jederzeit in Lodge unter **Einstellungen → Verbindung** ändern.
+
+---
+
+## Lokal auf dem PC (ohne Internet-Hosting)
+
+Doppelklick auf **`Server starten.bat`** oder:
 
 ```bash
-cd app
-npx expo start
+npm --prefix server start
 ```
 
-QR-Code mit der Expo-Go-App scannen, beim Login die Server-Adresse aus Schritt 1 eintragen (nicht `localhost`!).
+Ohne `DATABASE_URL` speichert der Server alles in `server/data/lodge.db` (SQLite). Die angezeigte Netzwerk-Adresse (z. B. `http://192.168.2.50:3000`) können andere im selben WLAN beim Login eintragen.
 
-**Wichtig:** Expo Go enthält kein WebRTC. Chat, Server, Freunde und Einstellungen funktionieren, **Sprache, Kamera und Bildschirm aber nicht**. Dafür braucht es einen kostenlosen *Development Build*:
+---
 
-```bash
-npx expo run:android
-```
+## Hinweise
 
-(benötigt Android Studio) oder in der Cloud mit `npx eas-cli@latest build --profile development`. Der Code für Anrufe auf dem Handy ist schon drin und schaltet sich dann automatisch ein.
+- **Sprache/Video über das Internet:** Lodge nutzt kostenlose STUN-Server. In sehr strikten Netzen (manche Mobilfunk- oder Firmennetze) kommt ohne TURN-Server keine Verbindung zustande. Einen eigenen TURN-Server kannst du unter **Einstellungen → Verbindung** eintragen.
+- **Handy:** Die Web-App läuft auch im Handy-Browser über die Vercel-Adresse.
+- **Geheimnisse:** `server/data/` und `.env`-Dateien werden nicht ins Repository übernommen.
 
 ## Funktionen
 
@@ -64,3 +109,4 @@ npx expo run:android
 - Freunde (Anfragen, Annehmen, Entfernen, Blockieren), Direktnachrichten, Gruppen bis 10 Personen
 - Sprachkanäle und Anrufe: Stummschalten, Taubschalten, Kamera, Bildschirm teilen (mit Ton), Sprecheranzeige, Lautstärke pro Person, Klingeln bei Anrufen
 - Einstellungen: Profil, Status, Design (Dunkel/Mitternacht/Hell/System), Akzentfarbe, Schriftgröße, kompakter Modus, Animationen, Geräteauswahl, Mikrofontest, Rausch-/Echounterdrückung, Töne, Benachrichtigungen, Sprache (automatisch nach System), Server-Adresse, eigener TURN-Server
+- Spam-Schutz, Verbindungsanzeige beim Aufwachen des Servers

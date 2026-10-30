@@ -1,0 +1,40 @@
+{
+  "expo": {
+    "name": "Lodge",
+    "slug": "lodge",
+    "scheme": "lodge",
+    "version": "1.0.0",
+    "orientation": "default",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#121318",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "app.lodge.client",
+      "infoPlist": {
+        "NSMicrophoneUsageDescription": "Lodge braucht das Mikrofon für Sprachchats und Anrufe.",
+        "NSCameraUsageDescription": "Lodge braucht die Kamera für Videoanrufe.",
+        "NSAppTransportSecurity": { "NSAllowsArbitraryLoads": true }
+      }
+    },
+    "android": {
+      "package": "app.lodge.client",
+      "permissions": ["android.permission.RECORD_AUDIO", "android.permission.CAMERA", "android.permission.MODIFY_AUDIO_SETTINGS", "android.permission.BLUETOOTH_CONNECT"],
+      "adaptiveIcon": {
+        "backgroundColor": "#7c5cff",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      }
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "name": "Lodge",
+      "backgroundColor": "#121318",
+      "themeColor": "#7c5cff"
+    },
+    "plugins": [
+      "expo-localization"
+    ]
+  }
+}
