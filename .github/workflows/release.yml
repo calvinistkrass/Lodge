@@ -14,9 +14,9 @@ jobs:
   windows:
     runs-on: windows-latest
     env:
-      # In GitHub unter Settings → Secrets and variables → Actions → Variables eintragen.
-      EXPO_PUBLIC_SERVER_URL: ${{ vars.EXPO_PUBLIC_SERVER_URL }}
-      EXPO_PUBLIC_WEB_URL: ${{ vars.EXPO_PUBLIC_WEB_URL }}
+      # Lassen sich in GitHub unter Settings → Secrets and variables → Actions → Variables überschreiben.
+      EXPO_PUBLIC_SERVER_URL: ${{ vars.EXPO_PUBLIC_SERVER_URL || 'https://lodge-server-oshj.onrender.com' }}
+      EXPO_PUBLIC_WEB_URL: ${{ vars.EXPO_PUBLIC_WEB_URL || 'https://lodge-beta.vercel.app' }}
     steps:
       - uses: actions/checkout@v4
 
