@@ -1,0 +1,71 @@
+{
+  "name": "lodge-desktop",
+  "productName": "Lodge",
+  "version": "1.0.0",
+  "description": "Lodge – deine kostenlose Gaming- und Chill-Software",
+  "author": "Lodge",
+  "main": "main.js",
+  "private": true,
+  "scripts": {
+    "web": "cd ../app && npx expo export -p web",
+    "start": "electron .",
+    "dist": "npm run web && electron-builder --win",
+    "pack": "electron-builder --win --dir"
+  },
+  "build": {
+    "appId": "app.lodge.desktop",
+    "productName": "Lodge",
+    "files": [
+      "main.js",
+      "preload.js",
+      "picker.html"
+    ],
+    "extraResources": [
+      {
+        "from": "../app/dist",
+        "to": "web"
+      }
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "Lodge"
+    },
+    "portable": {
+      "artifactName": "Lodge-Portable-${version}.exe"
+    },
+    "protocols": [
+      {
+        "name": "Lodge",
+        "schemes": [
+          "lodge"
+        ]
+      }
+    ]
+  },
+  "devDependencies": {
+    "electron": "^45.1.0",
+    "electron-builder": "^26.18.0"
+  }
+}

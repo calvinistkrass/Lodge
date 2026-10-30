@@ -1,0 +1,21 @@
+{
+  "name": "lodge-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Lodge backend: Auth, Server, Kanäle, Nachrichten, Freunde und Voice-Signaling",
+  "main": "src/index.js",
+  "scripts": {
+    "start": "node --no-warnings src/index.js",
+    "dev": "node --no-warnings --watch src/index.js"
+  },
+  "engines": {
+    "node": ">=22.13"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "jsonwebtoken": "^9.0.2",
+    "socket.io": "^4.8.1"
+  }
+}

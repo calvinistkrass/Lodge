@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="de">
+  <head>
+    <meta charset="utf-8" />
+    <title>Bildschirm teilen</title>
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; img-src data:; style-src 'unsafe-inline'; script-src 'unsafe-inline'" />
+    <style>
+      :root { --bg: #17181f; --panel: #1d1f27; --elev: #252832; --text: #eef0f6; --muted: #a2a7b8; --accent: #7c5cff; }
+      * { box-sizing: border-box; }
+      body { margin: 0; background: var(--bg); color: var(--text); font: 14px/1.4 'Segoe UI', system-ui, sans-serif; display: flex; flex-direction: column; height: 100vh; user-select: none; }
+      header { padding: 18px 22px 8px; }
+      h1 { margin: 0 0 4px; font-size: 19px; }
+      .tabs { display: flex; gap: 4px; background: var(--elev); padding: 4px; border-radius: 12px; margin: 10px 22px 0; }
+      .tab { flex: 1; text-align: center; padding: 8px; border-radius: 9px; color: var(--muted); font-weight: 600; cursor: pointer; transition: background .18s, color .18s; }
+      .tab.active { background: var(--panel); color: var(--text); }
+      .grid { flex: 1; overflow: auto; padding: 16px 22px; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 14px; align-content: start; }
+      .src { background: var(--panel); border: 2px solid transparent; border-radius: 14px; padding: 8px; cursor: pointer; transition: transform .18s cubic-bezier(.2,.8,.2,1.2), border-color .18s, background .18s; }
+      .src:hover { transform: translateY(-2px) scale(1.02); background: var(--elev); }
+      .src:active { transform: scale(.97); }
+      .src.sel { border-color: var(--accent); }
+      .src img { width: 100%; aspect-ratio: 16/9; object-fit: contain; background: #000; border-radius: 9px; display: block; }
+      .src div { margin-top: 6px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-weight: 600; }
+      footer { display: flex; align-items: center; gap: 10px; padding: 14px 22px; border-top: 1px solid rgba(255,255,255,.07); }
+      label { flex: 1; display: flex; align-items: center; gap: 8px; color: var(--muted); cursor: pointer; }
+      input { accent-color: var(--accent); width: 16px; height: 16px; }
+      button { border: 0; border-radius: 12px; padding: 0 18px; height: 40px; font: 600 14px 'Segoe UI', system-ui, sans-serif; cursor: pointer; transition: transform .15s, filter .15s, opacity .15s; }
+      button:hover { filter: brightness(1.12); }
+      button:active { transform: scale(.96); }
+      button:disabled { opacity: .45; cursor: default; }
+      .ghost { background: transparent; color: var(--text); }
+      .primary { background: var(--accent); color: #fff; }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Bildschirm teilen</h1>
+      <div style="color: var(--muted)">Wähle einen Bildschirm oder ein Fenster.</div>
+    </header>
+    <div class="tabs"><div class="tab active" data-t="screen">Bildschirme</div><div class="tab" data-t="window">Fenster</div></div>
+    <div class="grid" id="grid"></div>
+    <footer>
+      <label><input type="checkbox" id="audio" checked /> Ton übertragen</label>
+      <button class="ghost" id="cancel">Abbrechen</button>
+      <button class="primary" id="go" disabled>Live gehen</button>
+    </footer>
+    <script>
+      let sources = [];
+      let tab = 'screen';
+      let selected = null;
+      const grid = document.getElementById('grid');
+      const go = document.getElementById('go');
+      function render() {
+        grid.innerHTML = '';
+        for (const s of sources.filter((x) => (tab === 'screen') === x.screen)) {
+          const el = document.createElement('div');
+          el.className = 'src' + (selected === s.id ? ' sel' : '');
+          const img = document.createElement('img');
+          img.src = s.thumb;
+          const name = document.createElement('div');
+          name.textContent = s.name;
+          el.append(img, name);
+          el.onclick = () => { selected = s.id; go.disabled = false; render(); };
+          el.ondblclick = () => submit();
+          grid.append(el);
+        }
+      }
+      function submit() {
+        if (selected) window.lodgeDesktop.choose({ id: selected, audio: document.getElementById('audio').checked });
+      }
+      document.querySelectorAll('.tab').forEach((t) => (t.onclick = () => {
+        tab = t.dataset.t;
+        document.querySelectorAll('.tab').forEach((x) => x.classList.toggle('active', x === t));
+        render();
+      }));
+      go.onclick = submit;
+      document.getElementById('cancel').onclick = () => window.lodgeDesktop.choose(null);
+      document.addEventListener('keydown', (e) => e.key === 'Escape' && window.lodgeDesktop.choose(null));
+      window.lodgeDesktop.onSources((s) => { sources = s; render(); });
+    </script>
+  </body>
+</html>
