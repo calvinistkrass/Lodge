@@ -13,6 +13,8 @@ export const DEFAULT_SETTINGS = {
   sendTyping: true,
   sounds: true,
   messageSound: true,
+  callSound: true,
+  soundVolume: 0.7,
   desktopNotifications: true,
   inputDeviceId: 'default',
   outputDeviceId: 'default',

@@ -8,6 +8,7 @@ import { api, openDm } from '../api';
 import { Button, Input, Icon, IconButton, Avatar, Pressy, Swatches, IconPicker, Segmented, useIsMobile, Divider, StatusDot, FadeIn } from '../ui';
 import { parseInviteInput, inviteLink } from '../util';
 import { voice } from '../voice/engine';
+import { startLoop, stopLoop } from '../sounds';
 import { MemberList } from './MemberList';
 import SettingsScreen from './SettingsScreen';
 import ServerSettings from './ServerSettings';
@@ -840,7 +841,11 @@ export function IncomingCall() {
       ])
     );
     loop.start();
-    return () => loop.stop();
+    if (getState().me?.status !== 'dnd') startLoop('ring', 2600, 30000);
+    return () => {
+      loop.stop();
+      stopLoop('ring');
+    };
   }, [call]);
   if (!call) return null;
   const scale = v.interpolate({ inputRange: [0, 1], outputRange: [1, 1.12] });

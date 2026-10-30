@@ -1,4 +1,5 @@
 import { normalizeUrl } from './api';
+import { useEffect, useState } from 'react';
 import { getState } from './store';
 
 // Erkennt Einladungslinks wie lodge://invite/CODE, https://host/invite/CODE oder einen nackten Code.
@@ -36,4 +37,25 @@ export function formatDay(ts, t) {
 
 export function formatStamp(ts, t) {
   return `${formatDay(ts, t)} ${formatTime(ts)}`;
+}
+
+// Neueste PC-Version. Der feste Dateiname zeigt immer auf das letzte GitHub-Release.
+export const DESKTOP_DOWNLOAD_URL = process.env.EXPO_PUBLIC_DOWNLOAD_URL || 'https://github.com/calvinistkrass/Lodge/releases/latest/download/Lodge-Setup.exe';
+
+// Download-Knopf nur im Browser auf einem Windows-PC zeigen – nicht in der .exe und nicht am Handy.
+export function canDownloadDesktop() {
+  if (typeof window === 'undefined' || typeof navigator === 'undefined' || window.lodgeDesktop) return false;
+  const ua = navigator.userAgent || '';
+  return /Windows/i.test(ua) && !/Mobile|Android|iPhone|iPad/i.test(ua);
+}
+
+export function downloadDesktop() {
+  if (typeof window !== 'undefined') window.location.href = DESKTOP_DOWNLOAD_URL;
+}
+
+// Erst nach dem ersten Rendern prüfen, damit der statische Web-Export gleich aussieht.
+export function useCanDownloadDesktop() {
+  const [can, setCan] = useState(false);
+  useEffect(() => setCan(canDownloadDesktop()), []);
+  return can;
 }

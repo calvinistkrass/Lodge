@@ -8,6 +8,7 @@ import { useStore, updateSettings, closeModal, openModal, showToast, setState } 
 import { api, logout, checkServer, normalizeUrl } from '../api';
 import { Button, Input, Icon, IconButton, Avatar, Pressy, Swatches, IconPicker, Segmented, Toggle, SettingRow, Card, Divider, useIsMobile, FadeIn } from '../ui';
 import { voice } from '../voice/engine';
+import { playSound } from '../sounds';
 
 const AVATAR_ICONS = [null, 'game-controller', 'rocket', 'flame', 'skull', 'planet', 'paw', 'leaf', 'moon', 'flash', 'headset', 'musical-notes', 'diamond', 'bug', 'fish', 'football'];
 const LANGUAGE_NAMES = { de: 'Deutsch', en: 'English' };
@@ -338,6 +339,7 @@ function VoiceSection() {
 
 function NotificationsSection() {
   const t = useT();
+  const theme = useTheme();
   const s = useStore((x) => x.settings);
   return (
     <>
@@ -347,9 +349,32 @@ function NotificationsSection() {
           <Toggle value={s.sounds} onChange={(sounds) => updateSettings({ sounds })} />
         </SettingRow>
         <Divider inset={46} />
-        <SettingRow icon="notifications-outline" title={t('settings.messageSound')}>
+        <SettingRow icon="notifications-outline" title={t('settings.messageSound')} subtitle={t('settings.messageSoundSub')}>
           <Toggle value={s.messageSound} onChange={(messageSound) => updateSettings({ messageSound })} />
         </SettingRow>
+        <Divider inset={46} />
+        <SettingRow icon="call-outline" title={t('settings.callSound')} subtitle={t('settings.callSoundSub')}>
+          <Toggle value={s.callSound !== false} onChange={(callSound) => updateSettings({ callSound })} />
+        </SettingRow>
+        <Divider inset={46} />
+        <View style={{ padding: 14, gap: 10 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <Text style={{ color: theme.text, fontWeight: '600', fontSize: theme.fs(15) }}>{t('settings.soundVolume')}</Text>
+            <Button small variant="secondary" icon="play" title={t('settings.soundTest')} onPress={() => playSound('message', { force: true })} />
+          </View>
+          <Segmented
+            value={s.soundVolume ?? 0.7}
+            onChange={(soundVolume) => {
+              updateSettings({ soundVolume });
+              setTimeout(() => playSound('message', { force: true }), 30);
+            }}
+            options={[
+              { value: 0.35, label: t('settings.volumeQuiet'), icon: 'volume-low-outline' },
+              { value: 0.7, label: t('settings.volumeMedium'), icon: 'volume-medium-outline' },
+              { value: 1, label: t('settings.volumeLoud'), icon: 'volume-high-outline' },
+            ]}
+          />
+        </View>
         {Platform.OS === 'web' ? (
           <>
             <Divider inset={46} />
@@ -483,7 +508,7 @@ function AboutSection() {
       </Card>
       <Card>
         <SettingRow icon="information-circle-outline" title={t('settings.version')}>
-          <Text style={{ color: theme.textMuted }}>{Constants.expoConfig?.version || '1.0.0'}</Text>
+          <Text style={{ color: theme.textMuted }}>{Constants.expoConfig?.version || '1.1.0'}</Text>
         </SettingRow>
         <Divider inset={46} />
         <SettingRow icon="hardware-chip-outline" title={t('settings.platform')}>

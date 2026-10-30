@@ -10,6 +10,7 @@ import ChatView from './ChatView';
 import FriendsView from './FriendsView';
 import VoiceView from './VoiceView';
 import { MemberList } from './MemberList';
+import { useCanDownloadDesktop, downloadDesktop } from '../util';
 
 // ---------- Server-Leiste ----------
 
@@ -54,6 +55,7 @@ function ServerRail({ onSelect }) {
   const dms = useStore((s) => s.dms);
   const pending = useStore((s) => s.friends.filter((f) => f.status === 'pending' && f.direction === 'incoming').length);
   const dmUnread = dms.reduce((n, d) => n + (unread[d.id] || 0), 0);
+  const canDownload = useCanDownloadDesktop();
 
   const openServer = (sv) => {
     const last = getState().lastChannel[sv.id];
@@ -72,6 +74,7 @@ function ServerRail({ onSelect }) {
           return <RailItem key={sv.id} active={nav.section === 'server' && nav.serverId === sv.id} onPress={() => openServer(sv)} icon={sv.icon} color={sv.color} label={sv.name} badge={count} />;
         })}
         <RailItem onPress={() => openModal('addServer')} icon="add" label={t('nav.addServer')} accent={theme.success} />
+        {canDownload ? <RailItem onPress={downloadDesktop} icon="download-outline" label={t('download.button')} accent={theme.success} /> : null}
       </ScrollView>
     </View>
   );

@@ -1,7 +1,7 @@
 {
   "name": "lodge-desktop",
   "productName": "Lodge",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Lodge – deine kostenlose Gaming- und Chill-Software",
   "author": "Lodge",
   "main": "main.js",
@@ -50,10 +50,11 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
-      "shortcutName": "Lodge"
+      "shortcutName": "Lodge",
+      "artifactName": "Lodge-Setup.exe"
     },
     "portable": {
-      "artifactName": "Lodge-Portable-${version}.exe"
+      "artifactName": "Lodge-Portable.exe"
     },
     "protocols": [
       {

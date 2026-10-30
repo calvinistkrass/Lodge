@@ -128,11 +128,11 @@ function setMessages(channelId, fn) {
   });
 }
 
-function notify(msg) {
+function notify(msg, mentioned) {
   const s = getState();
   const t = (k, v) => translate(resolveLanguage(s.settings.language), k, v);
   if (s.me?.status === 'dnd') return;
-  if (s.settings.messageSound) playSound('message');
+  playSound(mentioned ? 'mention' : 'message');
   if (!s.settings.desktopNotifications || Platform.OS !== 'web' || typeof Notification === 'undefined') return;
   if (typeof document !== 'undefined' && document.hasFocus()) return;
   const dm = s.dms.find((d) => d.id === msg.channelId);
@@ -183,7 +183,7 @@ function connectSocket() {
     const before = getState().friends.filter((f) => f.status === 'pending' && f.direction === 'incoming').length;
     setState({ friends });
     const after = friends.filter((f) => f.status === 'pending' && f.direction === 'incoming').length;
-    if (after > before && getState().settings.messageSound) playSound('message');
+    if (after > before && getState().me?.status !== 'dnd') playSound('friendRequest');
   });
 
   socket.on('message:new', (msg) => {
@@ -201,7 +201,9 @@ function connectSocket() {
     if (!viewing) setState((x) => ({ unread: { ...x.unread, [msg.channelId]: (x.unread[msg.channelId] || 0) + 1 } }));
     const isDm = st.dms.some((d) => d.id === msg.channelId);
     const mentioned = st.me && msg.content.includes(`@${st.me.username}`);
-    if ((!viewing || !focused) && (isDm || mentioned)) notify(msg);
+    if ((!viewing || !focused) && (isDm || mentioned)) notify(msg, mentioned);
+    // Auch im offenen Chat ein leiser Hinweis, wenn eine Direktnachricht oder Erwähnung ankommt.
+    else if ((isDm || mentioned) && st.me?.status !== 'dnd') playSound(mentioned ? 'mention' : 'message');
     if (isDm) setState((x) => ({ dms: x.dms.map((d) => (d.id === msg.channelId ? { ...d, lastActivity: msg.createdAt } : d)) }));
   });
   socket.on('message:update', (msg) => setMessages(msg.channelId, (items) => items.map((m) => (m.id === msg.id ? msg : m))));
@@ -212,6 +214,19 @@ function connectSocket() {
   });
 
   socket.on('voice:room', ({ roomId, participants }) => {
+    const st0 = getState();
+    // Kamera/Bildschirm anderer im eigenen Sprachkanal hörbar machen.
+    if (require('./voice/engine').voice.roomId === roomId) {
+      const before = new Map((st0.voiceRooms[roomId] || []).map((p) => [p.socketId, p]));
+      for (const p of participants) {
+        const old = before.get(p.socketId);
+        if (!old || p.socketId === socket.id) continue;
+        if (p.video !== old.video) playSound(p.video ? 'cameraOn' : 'cameraOff');
+        if (p.screen !== old.screen) playSound(p.screen ? 'screenOn' : 'screenOff');
+      }
+    }
+    // Anrufer hat aufgelegt, bevor man angenommen hat.
+    if (!participants.length && st0.incomingCall?.dmId === roomId) setState({ incomingCall: null });
     setState((st) => {
       const voiceRooms = { ...st.voiceRooms };
       if (participants.length) voiceRooms[roomId] = participants;
@@ -224,7 +239,6 @@ function connectSocket() {
     const { voice } = require('./voice/engine');
     if (voice.roomId === dmId) return;
     setState({ incomingCall: { dmId, caller } });
-    playSound('ring');
     setTimeout(() => {
       if (getState().incomingCall?.dmId === dmId) setState({ incomingCall: null });
     }, 30000);

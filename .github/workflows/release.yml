@@ -1,0 +1,52 @@
+# Baut die PC-Version und veröffentlicht sie als GitHub-Release.
+# Auslösen: Tag pushen (z. B. v1.1.0) oder unter Actions → "PC-Version veröffentlichen" → Run workflow.
+name: PC-Version veröffentlichen
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    env:
+      # In GitHub unter Settings → Secrets and variables → Actions → Variables eintragen.
+      EXPO_PUBLIC_SERVER_URL: ${{ vars.EXPO_PUBLIC_SERVER_URL }}
+      EXPO_PUBLIC_WEB_URL: ${{ vars.EXPO_PUBLIC_WEB_URL }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Web-App installieren
+        run: npm ci
+        working-directory: app
+
+      - name: Desktop installieren
+        run: npm ci
+        working-directory: desktop
+
+      - name: .exe bauen
+        run: npm run dist -- --publish never
+        working-directory: desktop
+
+      - name: Version lesen
+        id: version
+        shell: bash
+        run: echo "tag=v$(node -p "require('./desktop/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - name: Release veröffentlichen
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_type == 'tag' && github.ref_name || steps.version.outputs.tag }}
+          name: Lodge ${{ github.ref_type == 'tag' && github.ref_name || steps.version.outputs.tag }}
+          make_latest: true
+          files: |
+            desktop/release/Lodge-Setup.exe
+            desktop/release/Lodge-Portable.exe

@@ -6,6 +6,7 @@ import { useT, errorText } from '../i18n';
 import { useStore, setState } from '../store';
 import { login, register, checkServer, normalizeUrl } from '../api';
 import { Button, Input, Icon, FadeIn, Pressy } from '../ui';
+import { useCanDownloadDesktop, downloadDesktop } from '../util';
 
 export default function AuthScreen() {
   const theme = useTheme();
@@ -41,6 +42,7 @@ export default function AuthScreen() {
   };
 
   const isLogin = mode === 'login';
+  const canDownload = useCanDownloadDesktop();
 
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: theme.bg }}>
@@ -99,6 +101,12 @@ export default function AuthScreen() {
                 </FadeIn>
               ) : null}
             </View>
+            {canDownload ? (
+              <View style={{ marginTop: 16, alignItems: 'center', gap: 6 }}>
+                <Button variant="secondary" icon="download-outline" title={t('download.button')} onPress={downloadDesktop} />
+                <Text style={{ color: theme.textFaint, fontSize: theme.fs(12) }}>{t('download.hint')}</Text>
+              </View>
+            ) : null}
           </FadeIn>
         </ScrollView>
       </KeyboardAvoidingView>

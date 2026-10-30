@@ -58,10 +58,27 @@ HTTPS-Zertifikate stellen Vercel und Render automatisch aus. HTTPS ist auch nöt
 
 ## PC-Version (.exe)
 
-Die fertigen Dateien liegen nach dem Bauen in `desktop/release/`:
+### Download-Knopf
 
-- `Lodge Setup 1.0.0.exe` – Installer mit Desktop-Verknüpfung
-- `Lodge-Portable-1.0.0.exe` – läuft ohne Installation
+Wer Lodge im Browser auf einem Windows-PC öffnet, sieht beim Login und links in der Serverleiste einen Knopf **Lodge für Windows herunterladen**. Er lädt immer das neueste GitHub-Release (`Lodge-Setup.exe`).
+
+Neue Version veröffentlichen:
+
+1. Versionsnummer in `desktop/package.json` und `app/app.json` erhöhen, z. B. `1.2.0`.
+2. Committen und einen Tag pushen:
+   ```bash
+   git tag v1.2.0
+   git push origin v1.2.0
+   ```
+3. GitHub baut die .exe automatisch (Reiter **Actions**, ca. 10 Min.) und hängt `Lodge-Setup.exe` und `Lodge-Portable.exe` an das Release.
+
+Alternativ unter **Actions → PC-Version veröffentlichen → Run workflow** starten.
+
+Damit die .exe gleich mit deinem Online-Server verbindet: GitHub → Repo → **Settings → Secrets and variables → Actions → Variables** → `EXPO_PUBLIC_SERVER_URL` (und `EXPO_PUBLIC_WEB_URL`) eintragen.
+
+**Wichtig:** Downloads aus einem **privaten** Repository funktionieren nur für dich. Damit andere die .exe laden können, muss das Repository öffentlich sein, oder du trägst in Vercel `EXPO_PUBLIC_DOWNLOAD_URL` mit einer anderen Download-Adresse ein.
+
+### Selbst bauen
 
 Damit die .exe direkt mit deinem Online-Server verbindet, lege `app/.env` an (Vorlage: `app/.env.example`):
 
@@ -70,11 +87,13 @@ EXPO_PUBLIC_SERVER_URL=https://lodge-server.onrender.com
 EXPO_PUBLIC_WEB_URL=https://lodge.deinedomain.de
 ```
 
-und baue neu:
+und baue:
 
 ```bash
 npm --prefix desktop run dist
 ```
+
+Die Dateien liegen danach in `desktop/release/`: `Lodge-Setup.exe` (Installer) und `Lodge-Portable.exe` (ohne Installation).
 
 Ohne `.env` verbindet die .exe mit `http://localhost:3000`. Die Adresse lässt sich jederzeit in Lodge unter **Einstellungen → Verbindung** ändern.
 
@@ -109,4 +128,6 @@ Ohne `DATABASE_URL` speichert der Server alles in `server/data/lodge.db` (SQLite
 - Freunde (Anfragen, Annehmen, Entfernen, Blockieren), Direktnachrichten, Gruppen bis 10 Personen
 - Sprachkanäle und Anrufe: Stummschalten, Taubschalten, Kamera, Bildschirm teilen (mit Ton), Sprecheranzeige, Lautstärke pro Person, Klingeln bei Anrufen
 - Einstellungen: Profil, Status, Design (Dunkel/Mitternacht/Hell/System), Akzentfarbe, Schriftgröße, kompakter Modus, Animationen, Geräteauswahl, Mikrofontest, Rausch-/Echounterdrückung, Töne, Benachrichtigungen, Sprache (automatisch nach System), Server-Adresse, eigener TURN-Server
+- Töne für Anrufe (Klingeln, Freizeichen, abgelehnt), Kamera, Bildschirm, Nachrichten, Erwähnungen und Freundschaftsanfragen – einzeln abschaltbar, mit Lautstärke
+- Download-Knopf für die PC-Version im Browser
 - Spam-Schutz, Verbindungsanzeige beim Aufwachen des Servers

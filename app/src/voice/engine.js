@@ -1,7 +1,7 @@
 import { useSyncExternalStore } from 'react';
 import { rtc } from './rtc';
 import { getState, setState, showToast, updateSettings } from '../store';
-import { playSound } from '../sounds';
+import { playSound, startLoop, stopLoop } from '../sounds';
 import { translate, resolveLanguage } from '../i18n';
 
 // Kostenlose öffentliche STUN-Server. Für sehr strikte Netzwerke kann ein TURN-Server
@@ -86,7 +86,18 @@ class VoiceEngine {
       playSound('leave');
       this.emit();
     });
-    socket.on('voice:peer-joined', () => playSound('join'));
+    socket.on('voice:peer-joined', () => {
+      stopLoop('ringback');
+      playSound('join');
+    });
+    socket.on('call:declined', ({ dmId, userId }) => {
+      if (dmId !== this.roomId || userId === getState().me?.id) return;
+      // Nur hörbar, solange man noch allein im Anruf wartet.
+      if (this.peers.size) return;
+      stopLoop('ringback');
+      playSound('declined');
+      showToast(t('voice.callDeclined'), 'info');
+    });
     socket.on('disconnect', () => {
       if (!this.roomId) return;
       for (const id of [...this.peers.keys()]) this.closePeer(id);
@@ -161,6 +172,9 @@ class VoiceEngine {
       }
       this.status = 'connected';
       playSound('join');
+      // Allein in einem DM-Anruf: Freizeichen, bis jemand rangeht.
+      const isDm = getState().dms.some((d) => d.id === roomId);
+      if (isDm && !res.peers.length) setTimeout(() => this.roomId === roomId && !this.peers.size && startLoop('ringback', 3000, 30000), 400);
       for (const p of res.peers) this.startOffer(p.socketId, p.userId);
       if (this.cameraTrack || this.screenTrack) this.sendState();
       this.emit();
@@ -169,6 +183,7 @@ class VoiceEngine {
 
   leave(silent) {
     if (!this.roomId) return;
+    stopLoop('ringback');
     this.socket?.emit('voice:leave');
     for (const id of [...this.peers.keys()]) this.closePeer(id);
     for (const tr of [this.micTrack, this.cameraTrack, this.screenTrack, this.screenAudioTrack]) tr?.stop();
@@ -334,7 +349,7 @@ class VoiceEngine {
     } else this.muted = this.mutedBeforeDeafen;
     if (this.micTrack) this.micTrack.enabled = !this.muted;
     this.applyDeafen();
-    playSound(this.deafened ? 'mute' : 'unmute');
+    playSound(this.deafened ? 'deafen' : 'undeafen');
     this.sendState();
     this.emit();
   }
@@ -353,12 +368,14 @@ class VoiceEngine {
       this.cameraTrack = null;
       this.cameraStream = null;
       this.replaceSlot('camera', null);
+      playSound('cameraOff');
     } else {
       try {
         const stream = await rtc.mediaDevices.getUserMedia({ video: { width: { ideal: 1280 }, height: { ideal: 720 }, frameRate: { ideal: 30 }, facingMode: 'user' }, audio: false });
         this.cameraTrack = stream.getVideoTracks()[0];
         this.cameraStream = stream;
         this.replaceSlot('camera', this.cameraTrack);
+        playSound('cameraOn');
       } catch (e) {
         console.warn('camera', e);
         showToast(t('voice.cameraDenied'), 'error');
@@ -381,6 +398,7 @@ class VoiceEngine {
       this.screenTrack.addEventListener('ended', () => this.stopScreen());
       this.replaceSlot('screen', this.screenTrack);
       this.replaceSlot('screenAudio', this.screenAudioTrack);
+      playSound('screenOn');
       this.sendState();
       this.emit();
     } catch (e) {
@@ -395,6 +413,7 @@ class VoiceEngine {
     this.screenTrack = this.screenAudioTrack = this.screenStream = null;
     this.replaceSlot('screen', null);
     this.replaceSlot('screenAudio', null);
+    playSound('screenOff');
     this.sendState();
     this.emit();
   }
